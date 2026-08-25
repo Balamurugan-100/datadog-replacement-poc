@@ -1,0 +1,7 @@
+.git/
+.jj/
+.pytest_cache/
+.vscode/
+.DS_Store
+.env
+staticfiles/

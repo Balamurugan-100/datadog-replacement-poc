@@ -1,0 +1,152 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: django-otel-postgres
+    environment:
+      POSTGRES_DB: django_otel
+      POSTGRES_USER: django
+      POSTGRES_PASSWORD: django
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U django -d django_otel"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgbouncer:
+    image: pgbouncer/pgbouncer:latest
+    container_name: django-otel-pgbouncer
+    ports:
+      - "6432:6432"
+    volumes:
+      - ./pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini:ro
+      - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt:ro
+      - ./pgbouncer/pg_hba.conf:/etc/pgbouncer/pg_hba.conf:ro
+      - pgbouncer_log:/var/log/pgbouncer
+    entrypoint: ["/opt/pgbouncer/pgbouncer", "/etc/pgbouncer/pgbouncer.ini"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  redis:
+    image: redis:7
+    container_name: django-otel-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  slave1db:
+    image: postgres:16
+    container_name: django-otel-slave1db
+    environment:
+      POSTGRES_DB: django_otel_slave1
+      POSTGRES_USER: django
+      POSTGRES_PASSWORD: django
+    ports:
+      - "5434:5432"
+    volumes:
+      - slave1_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U django -d django_otel_slave1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  slave2db:
+    image: postgres:16
+    container_name: django-otel-slave2db
+    environment:
+      POSTGRES_DB: django_otel_slave2
+      POSTGRES_USER: django
+      POSTGRES_PASSWORD: django
+    ports:
+      - "5435:5432"
+    volumes:
+      - slave2_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U django -d django_otel_slave2"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  slave3db:
+    image: postgres:16
+    container_name: django-otel-slave3db
+    environment:
+      POSTGRES_DB: django_otel_slave3
+      POSTGRES_USER: django
+      POSTGRES_PASSWORD: django
+    ports:
+      - "5436:5432"
+    volumes:
+      - slave3_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U django -d django_otel_slave3"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  external-api:
+    image: mccutchen/go-httpbin:v2.14.0
+    container_name: django-otel-external-api
+    ports:
+      - "8080:8080"
+
+  web:
+    build: .
+    container_name: django-otel-web
+    command: sh -c "python manage.py setup_databases && gunicorn config.wsgi:application --config gunicorn.conf.py --reload"
+    volumes:
+      - .:/app
+      - static_files:/app/staticfiles
+    expose:
+      - "8000"
+    environment:
+      - DJANGO_DB_HOST=pgbouncer
+      - DJANGO_DB_PORT=6432
+      - SLAVE1_DB_HOST=slave1db
+      - SLAVE1_DB_PORT=5432
+      - SLAVE2_DB_HOST=slave2db
+      - SLAVE2_DB_PORT=5432
+      - SLAVE3_DB_HOST=slave3db
+      - SLAVE3_DB_PORT=5432
+      - EXTERNAL_API_URL=http://external-api:8080/get
+      - DJANGO_REDIS_URL=redis://redis:6379/1
+      - GUNICORN_WORKERS=4
+      - GUNICORN_THREADS=4
+    depends_on:
+      pgbouncer:
+        condition: service_started
+      slave1db:
+        condition: service_healthy
+      slave2db:
+        condition: service_healthy
+      slave3db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  nginx:
+    build: ./nginx
+    container_name: django-otel-nginx
+    ports:
+      - "8001:80"
+    volumes:
+      - static_files:/app/staticfiles:ro
+    depends_on:
+      - web
+
+volumes:
+  postgres_data:
+  slave1_data:
+  slave2_data:
+  slave3_data:
+  static_files:
+  pgbouncer_log:

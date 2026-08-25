@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Product Detail</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; }
+        .field { margin-bottom: 1rem; }
+        label { font-weight: bold; display: block; margin-bottom: 0.25rem; }
+        .value { padding: 0.5rem; background: #f5f5f5; border-radius: 4px; }
+        a { color: #0066cc; }
+    </style>
+</head>
+<body>
+    <h1>Product Detail</h1>
+    {% if product %}
+    <div class="field">
+        <label>ID</label>
+        <div class="value">{{ product.id }}</div>
+    </div>
+    <div class="field">
+        <label>Name</label>
+        <div class="value">{{ product.name }}</div>
+    </div>
+    <div class="field">
+        <label>Description</label>
+        <div class="value">{{ product.description }}</div>
+    </div>
+    <div class="field">
+        <label>Price</label>
+        <div class="value">${{ product.price }}</div>
+    </div>
+    <div class="field">
+        <label>Stock</label>
+        <div class="value">{{ product.stock }}</div>
+    </div>
+    <div class="field">
+        <label>Created</label>
+        <div class="value">{{ product.created_at|date:"Y-m-d H:i:s" }}</div>
+    </div>
+    <div class="field">
+        <label>Updated</label>
+        <div class="value">{{ product.updated_at|date:"Y-m-d H:i:s" }}</div>
+    </div>
+    {% else %}
+    <p>Product not found</p>
+    {% endif %}
+    <p><a href="{% url 'product-list-tmpl' %}">Back to list</a></p>
+</body>
+</html>
