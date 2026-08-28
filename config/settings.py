@@ -53,6 +53,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "api.middleware.RequestLoggingMiddleware",
+    "django_otel_sdk.django.ViewTracingMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"

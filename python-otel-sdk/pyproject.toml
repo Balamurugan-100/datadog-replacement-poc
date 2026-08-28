@@ -1,0 +1,56 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "python-otel-sdk"
+version = "0.2.0"
+description = "Framework-agnostic OpenTelemetry SDK for Python — Django, FastAPI, Flask, Starlette"
+readme = "README.md"
+authors = [{ name = "Datadog Replacement Team", email = "engineering@example.com" }]
+requires-python = ">=3.8"
+dependencies = [
+    "opentelemetry-api==1.33.0",
+    "opentelemetry-sdk==1.33.0",
+    "opentelemetry-exporter-otlp==1.33.0",
+    "opentelemetry-instrumentation-requests==0.54b0",
+    "opentelemetry-instrumentation-redis==0.54b0",
+    "opentelemetry-instrumentation-psycopg2==0.54b0",
+]
+
+[project.optional-dependencies]
+django = [
+    "opentelemetry-instrumentation-django==0.54b0",
+    "opentelemetry-instrumentation-wsgi==0.54b0",
+    "opentelemetry-instrumentation-jinja2==0.54b0",
+]
+fastapi = [
+    "opentelemetry-instrumentation-fastapi==0.54b0",
+    "opentelemetry-instrumentation-asgi==0.54b0",
+    "opentelemetry-instrumentation-httpx==0.54b0",
+]
+flask = [
+    "opentelemetry-instrumentation-flask==0.54b0",
+    "opentelemetry-instrumentation-wsgi==0.54b0",
+]
+asgi = [
+    "opentelemetry-instrumentation-asgi==0.54b0",
+]
+starlette = [
+    "opentelemetry-instrumentation-asgi==0.54b0",
+]
+sqlalchemy = [
+    "opentelemetry-instrumentation-sqlalchemy==0.54b0",
+]
+celery = [
+    "opentelemetry-instrumentation-celery==0.54b0",
+]
+all = [
+    "python-otel-sdk[django,fastapi,flask,asgi,sqlalchemy,celery]",
+]
+
+[project.urls]
+Homepage = "https://example.com"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/otel_sdk"]

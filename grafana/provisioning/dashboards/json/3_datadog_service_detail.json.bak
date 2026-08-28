@@ -1,0 +1,1320 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "2. APM Overview",
+      "type": "link",
+      "url": "/d/datadog-apm-replacement/apm-datadog-replacement"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "3. Service Detail",
+      "type": "link",
+      "url": "/d/datadog-service-detail/apm-service-detail"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "4. Request Instances",
+      "type": "link",
+      "url": "/d/request-instances/apm-request-instances"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "title": "Health (${service})",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2,
+      "title": "Service Health Status",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "(sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", status_code=\"STATUS_CODE_ERROR\", server_address=~\"$service\", server_address!=\"pgbouncer\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\"}[$__range])) or label_replace(sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", status_code=\"STATUS_CODE_ERROR\", service_name=~\"$service\", service_name!=\"pgbouncer\", deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\",http_route=~\"$endpoint\"}[$__range])), \"server_address\", \"$1\", \"service_name\", \"(.+)\")) / (sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", server_address=~\"$service\", server_address!=\"pgbouncer\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\"}[$__range])) or label_replace(sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", service_name=~\"$service\", service_name!=\"pgbouncer\", deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\",http_route=~\"$endpoint\"}[$__range])), \"server_address\", \"$1\", \"service_name\", \"(.+)\")) * 100",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "from": 0,
+                "result": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "Healthy"
+                },
+                "to": 0.01
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 0.01,
+                "result": {
+                  "color": "yellow",
+                  "index": 1,
+                  "text": "Degraded"
+                },
+                "to": 5.0
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 5.0,
+                "result": {
+                  "color": "red",
+                  "index": 2,
+                  "text": "Critical"
+                },
+                "to": 100.0
+              },
+              "type": "range"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.01
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 4,
+        "y": 1
+      },
+      "id": 3,
+      "title": "Throughput (Req/sec)",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", server_address=~\"$service\", server_address!=\"pgbouncer\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\"}[$__range])) or label_replace(sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", service_name=~\"$service\", service_name!=\"pgbouncer\", deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\",http_route=~\"$endpoint\"}[$__range])), \"server_address\", \"$1\", \"service_name\", \"(.+)\")",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 9,
+        "y": 1
+      },
+      "id": 4,
+      "title": "P95 Latency",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum(rate(otel_traces_span_metrics_duration_milliseconds_bucket{span_kind=\"SPAN_KIND_SERVER\", server_address=~\"$service\", server_address!=\"pgbouncer\",deployment_environment=~\"$environment\",application=~\"$application\"}[$__range])) by (le)) or histogram_quantile(0.95, sum(rate(otel_traces_span_metrics_duration_milliseconds_bucket{span_kind=\"SPAN_KIND_SERVER\", service_name=~\"$service\", service_name!=\"pgbouncer\", deployment_environment=~\"$environment\",application=~\"$application\"}[$__range])) by (le))",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 100
+              },
+              {
+                "color": "red",
+                "value": 500
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 14,
+        "y": 1
+      },
+      "id": 5,
+      "title": "P99 Latency",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum(rate(otel_traces_span_metrics_duration_milliseconds_bucket{span_kind=\"SPAN_KIND_SERVER\", server_address=~\"$service\", server_address!=\"pgbouncer\",deployment_environment=~\"$environment\",application=~\"$application\"}[$__range])) by (le)) or histogram_quantile(0.99, sum(rate(otel_traces_span_metrics_duration_milliseconds_bucket{span_kind=\"SPAN_KIND_SERVER\", service_name=~\"$service\", service_name!=\"pgbouncer\", deployment_environment=~\"$environment\",application=~\"$application\"}[$__range])) by (le))",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 250
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 19,
+        "y": 1
+      },
+      "id": 6,
+      "title": "Error Rate",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "(sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", status_code=\"STATUS_CODE_ERROR\", server_address=~\"$service\", server_address!=\"pgbouncer\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\"}[$__range])) or label_replace(sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", status_code=\"STATUS_CODE_ERROR\", service_name=~\"$service\", service_name!=\"pgbouncer\", deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\",http_route=~\"$endpoint\"}[$__range])), \"server_address\", \"$1\", \"service_name\", \"(.+)\")) / (sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", server_address=~\"$service\", server_address!=\"pgbouncer\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\"}[$__range])) or label_replace(sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", service_name=~\"$service\", service_name!=\"pgbouncer\", deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\",http_route=~\"$endpoint\"}[$__range])), \"server_address\", \"$1\", \"service_name\", \"(.+)\")) * 100",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 5
+      },
+      "id": 7,
+      "title": "Throughput (${service})",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", server_address=~\"$service\", server_address!=\"pgbouncer\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\"}[$__rate_interval])) by (status_code) or label_replace(sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", service_name=~\"$service\", service_name!=\"pgbouncer\", deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\",http_route=~\"$endpoint\"}[$__rate_interval])) by (status_code), \"server_address\", \"$1\", \"service_name\", \"(.+)\")",
+          "legendFormat": "Current",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", server_address=~\"$service\", server_address!=\"pgbouncer\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\"}[$__rate_interval] offset $compare_window)) by (status_code) or label_replace(sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", service_name=~\"$service\", service_name!=\"pgbouncer\", deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\",http_route=~\"$endpoint\"}[$__rate_interval] offset $compare_window)) by (status_code), \"server_address\", \"$1\", \"service_name\", \"(.+)\")",
+          "legendFormat": "Previous $compare_window",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2
+          },
+          "unit": "reqps"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Previous $compare_window"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    10,
+                    10
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 5
+      },
+      "id": 8,
+      "title": "Latency (${service})",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.50, sum(rate(otel_traces_span_metrics_duration_milliseconds_bucket{span_kind=\"SPAN_KIND_SERVER\", server_address=~\"$service\", server_address!=\"pgbouncer\",deployment_environment=~\"$environment\",application=~\"$application\"}[$__rate_interval])) by (le)) or histogram_quantile(0.50, sum(rate(otel_traces_span_metrics_duration_milliseconds_bucket{span_kind=\"SPAN_KIND_SERVER\", service_name=~\"$service\", service_name!=\"pgbouncer\", deployment_environment=~\"$environment\",application=~\"$application\"}[$__rate_interval])) by (le))",
+          "legendFormat": "P50 Latency",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum(rate(otel_traces_span_metrics_duration_milliseconds_bucket{span_kind=\"SPAN_KIND_SERVER\", server_address=~\"$service\", server_address!=\"pgbouncer\",deployment_environment=~\"$environment\",application=~\"$application\"}[$__rate_interval])) by (le)) or histogram_quantile(0.95, sum(rate(otel_traces_span_metrics_duration_milliseconds_bucket{span_kind=\"SPAN_KIND_SERVER\", service_name=~\"$service\", service_name!=\"pgbouncer\", deployment_environment=~\"$environment\",application=~\"$application\"}[$__rate_interval])) by (le))",
+          "legendFormat": "P95 Latency",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum(rate(otel_traces_span_metrics_duration_milliseconds_bucket{span_kind=\"SPAN_KIND_SERVER\", server_address=~\"$service\", server_address!=\"pgbouncer\",deployment_environment=~\"$environment\",application=~\"$application\"}[$__rate_interval])) by (le)) or histogram_quantile(0.99, sum(rate(otel_traces_span_metrics_duration_milliseconds_bucket{span_kind=\"SPAN_KIND_SERVER\", service_name=~\"$service\", service_name!=\"pgbouncer\", deployment_environment=~\"$environment\",application=~\"$application\"}[$__rate_interval])) by (le))",
+          "legendFormat": "P99 Latency",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 5
+      },
+      "id": 9,
+      "title": "Error rate (${service})",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "(sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", status_code=\"STATUS_CODE_ERROR\", server_address=~\"$service\", server_address!=\"pgbouncer\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\"}[$__rate_interval])) or label_replace(sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", status_code=\"STATUS_CODE_ERROR\", service_name=~\"$service\", service_name!=\"pgbouncer\", deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\",http_route=~\"$endpoint\"}[$__rate_interval])), \"server_address\", \"$1\", \"service_name\", \"(.+)\")) / (sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", server_address=~\"$service\", server_address!=\"pgbouncer\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\"}[$__rate_interval])) or label_replace(sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", service_name=~\"$service\", service_name!=\"pgbouncer\", deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\",http_route=~\"$endpoint\"}[$__rate_interval])), \"server_address\", \"$1\", \"service_name\", \"(.+)\")) * 100",
+          "legendFormat": "Current",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "(sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", status_code=\"STATUS_CODE_ERROR\", server_address=~\"$service\", server_address!=\"pgbouncer\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\"}[$__rate_interval] offset $compare_window)) or label_replace(sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", status_code=\"STATUS_CODE_ERROR\", service_name=~\"$service\", service_name!=\"pgbouncer\", deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\",http_route=~\"$endpoint\"}[$__rate_interval] offset $compare_window)), \"server_address\", \"$1\", \"service_name\", \"(.+)\")) / (sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", server_address=~\"$service\", server_address!=\"pgbouncer\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\"}[$__rate_interval] offset $compare_window)) or label_replace(sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", service_name=~\"$service\", service_name!=\"pgbouncer\", deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\",http_route=~\"$endpoint\"}[$__rate_interval] offset $compare_window)), \"server_address\", \"$1\", \"service_name\", \"(.+)\")) * 100",
+          "legendFormat": "Previous $compare_window",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Previous $compare_window"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    10,
+                    10
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "id": 10,
+      "title": "Dependencies (${service})",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
+      "id": 11,
+      "title": "Downstream calls (${service})",
+      "type": "table",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_CLIENT\", service_name=~\"$service\", server_address!=\"pgbouncer\", server_address!=\"\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\"}[5m])) by (service_name, server_address, peer_service)",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{service_name}} -> {{server_address}}",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum(rate(otel_traces_span_metrics_duration_milliseconds_bucket{span_kind=\"SPAN_KIND_CLIENT\", service_name=~\"$service\", server_address!=\"pgbouncer\", server_address!=\"\",deployment_environment=~\"$environment\",application=~\"$application\"}[5m])) by (le, service_name, server_address, peer_service))",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{service_name}} -> {{server_address}}",
+          "refId": "B"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "server_address",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Time 1": true
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "server_address"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Downstream Target Service"
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "${__value.text}",
+                    "url": "/d/datadog-service-detail/apm-service-detail?orgId=1&from=${__from}&to=${__to}&var-service=${__data.fields.server_address:percentencode}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "service_name"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Caller Service"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #A"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Calls / sec"
+              },
+              {
+                "id": "unit",
+                "value": "reqps"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #B"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "P95 Latency"
+              },
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "footer": {
+          "countRows": true,
+          "enablePagination": true,
+          "show": true
+        },
+        "showHeader": true
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 19
+      },
+      "id": 12,
+      "title": "Endpoints ()",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 13,
+      "title": "Request summary ()",
+      "type": "table",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "round(label_replace(label_replace(sum(increase(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", service_name=~\"$service\", service_name!~\".*(db|postgres|redis|pgbouncer).*\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\",http_route=~\"$endpoint\"}[$__range])) by (span_name, service_name), \"resource\", \"$1\", \"span_name\", \"(.+)\"), \"service\", \"$1\", \"service_name\", \"(.+)\"))",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{resource}}",
+          "range": false,
+          "refId": "Requests"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "label_replace(histogram_quantile(0.95, sum(rate(otel_traces_span_metrics_duration_milliseconds_bucket{span_kind=\"SPAN_KIND_SERVER\", service_name=~\"$service\", service_name!~\".*(db|postgres|redis|pgbouncer).*\",deployment_environment=~\"$environment\",application=~\"$application\"}[$__range])) by (le, span_name)), \"resource\", \"$1\", \"span_name\", \"(.+)\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{resource}}",
+          "range": false,
+          "refId": "P95_Latency"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "round(label_replace(sum(increase(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", status_code=\"STATUS_CODE_ERROR\", service_name=~\"$service\", service_name!~\".*(db|postgres|redis|pgbouncer).*\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\",http_route=~\"$endpoint\"}[$__range])) by (span_name), \"resource\", \"$1\", \"span_name\", \"(.+)\"))",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{resource}}",
+          "range": false,
+          "refId": "Errors"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "label_replace(sum(increase(otel_traces_span_metrics_duration_milliseconds_sum{span_kind=\"SPAN_KIND_SERVER\", service_name=~\"$service\", service_name!~\".*(db|postgres|redis|pgbouncer).*\",deployment_environment=~\"$environment\",application=~\"$application\"}[$__range])) by (span_name), \"resource\", \"$1\", \"span_name\", \"(.+)\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{resource}}",
+          "range": false,
+          "refId": "Total_Time"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "resource",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Time 1": true,
+              "Time 2": true,
+              "Time 3": true,
+              "span_name": true,
+              "http_route": true,
+              "db_query_summary": true,
+              "app_cache_operation": true,
+              "service_name": true,
+              "server_address": true
+            },
+            "indexByName": {
+              "resource": 0,
+              "service": 1,
+              "Value #Requests": 2,
+              "Value #P95_Latency": 3,
+              "Value #Errors": 4,
+              "Value #Total_Time": 5
+            }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "View Instances",
+            "binary": {
+              "left": "Value #Requests",
+              "operator": "*",
+              "right": "0"
+            },
+            "mode": "binary",
+            "replaceFields": false
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "resource"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "URL / Request Name"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#6E9FFF",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "${__value.text}",
+                    "url": "/d/request-instances/apm-request-instances?orgId=1&from=${__from}&to=${__to}&var-service=${__data.fields.service:percentencode}&var-resource=${__data.fields.resource:percentencode}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "service"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Service Name"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #Requests"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Requests"
+              },
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "View instances of ${__data.fields.resource}",
+                    "url": "/d/request-instances/apm-request-instances?orgId=1&from=${__from}&to=${__to}&var-service=${__data.fields.service:percentencode}&var-resource=${__data.fields.resource:percentencode}"
+                  }
+                ]
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "View Instances"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 160
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "data-links"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "match": "zero",
+                      "result": {
+                        "index": 0,
+                        "text": "View Instances"
+                      }
+                    },
+                    "type": "special"
+                  }
+                ]
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "View Instances",
+                    "url": "/d/request-instances/apm-request-instances?orgId=1&from=${__from}&to=${__to}&var-service=${__data.fields.service:percentencode}&var-resource=${__data.fields.resource:percentencode}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #P95_Latency"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "P95 Latency"
+              },
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #Total_Time"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Time"
+              },
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #Errors"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Errors"
+              },
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "footer": {
+          "countRows": true,
+          "enablePagination": true,
+          "reducer": [
+            "sum"
+          ],
+          "show": true
+        },
+        "showHeader": true
+      }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [
+    "apm",
+    "datadog",
+    "service",
+    "detail"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "django",
+          "value": "django"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "query_result(label_replace(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", service_name!=\"pgbouncer\"}, \"service\", \"$1\", \"service_name\", \"(.+)\") or label_replace(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_CLIENT\", server_address!=\"pgbouncer\"}, \"service\", \"$1\", \"server_address\", \"(.+)\"))",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Select Service",
+        "multi": false,
+        "name": "service",
+        "options": [],
+        "query": "query_result(label_replace(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", service_name!=\"pgbouncer\"}, \"service\", \"$1\", \"service_name\", \"(.+)\") or label_replace(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_CLIENT\", server_address!=\"pgbouncer\"}, \"service\", \"$1\", \"server_address\", \"(.+)\"))",
+        "refresh": 1,
+        "regex": "/service=\"(?!pgbouncer$)([^\"]+)\"/",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "hide": 0,
+        "includeAll": true,
+        "name": "environment",
+        "query": "label_values(otel_traces_span_metrics_calls_total, deployment_environment)",
+        "type": "query",
+        "refresh": 1,
+        "sort": 1
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "hide": 0,
+        "includeAll": true,
+        "name": "application",
+        "query": "label_values(otel_traces_span_metrics_calls_total, application)",
+        "type": "query",
+        "refresh": 1,
+        "sort": 1
+      },
+      {
+        "hide": 0,
+        "includeAll": true,
+        "name": "status",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "OK",
+            "value": "STATUS_CODE_OK"
+          },
+          {
+            "selected": false,
+            "text": "ERROR",
+            "value": "STATUS_CODE_ERROR"
+          },
+          {
+            "selected": false,
+            "text": "UNSET",
+            "value": "STATUS_CODE_UNSET"
+          }
+        ],
+        "query": "STATUS_CODE_OK,STATUS_CODE_ERROR,STATUS_CODE_UNSET",
+        "type": "custom"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "hide": 0,
+        "includeAll": true,
+        "name": "endpoint",
+        "query": "label_values(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\"}, http_route)",
+        "type": "query",
+        "refresh": 1,
+        "sort": 1
+      },
+      {
+        "hide": 0,
+        "name": "compare_window",
+        "options": [
+          {
+            "selected": false,
+            "text": "1h",
+            "value": "1h"
+          },
+          {
+            "selected": true,
+            "text": "1d",
+            "value": "1d"
+          },
+          {
+            "selected": false,
+            "text": "7d",
+            "value": "7d"
+          }
+        ],
+        "query": "1h,1d,7d",
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "APM - Service Detail",
+  "uid": "datadog-service-detail"
+}

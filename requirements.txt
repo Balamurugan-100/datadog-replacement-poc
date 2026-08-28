@@ -14,3 +14,5 @@ requests==2.27.1
 sqlparse==0.5.5
 typing-extensions==4.13.2
 urllib3==1.26.20
+-e ./python-otel-sdk
+-e ./django-otel-sdk  # shim — delegates to python-otel-sdk; keep for backward compat

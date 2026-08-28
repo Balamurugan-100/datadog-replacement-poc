@@ -1,242 +1,64 @@
-# Django OpenTelemetry POC
+# OpenTelemetry APM Stack for Django (Datadog Replacement PoC)
 
-A proof-of-concept Django application demonstrating OpenTelemetry instrumentation patterns for distributed tracing, metrics, and logging.
+An open-source, high-performance APM replacement for Datadog built with **OpenTelemetry Python SDK**, **OTel Collector**, **Grafana Tempo**, **Prometheus**, and **Grafana**.
 
-## Architecture Overview
+---
 
-```
-                   ┌─────────────┐
-                   │    Nginx    │
-                   │  (Port 80)  │
-                   └──────┬──────┘
-                          │
-                   ┌──────▼──────┐
-                   │    Django   │
-                   └──────┬──────┘
-        ┌─────────────┼─────────────┬─────────────┬─────────────┐
-        │             │             │             │             │
- ┌──────▼──────┐┌─────▼──────┐┌─────▼──────┐┌─────▼──────┐┌─────▼──────┐┌──────────────┐
- │  pgbouncer  ││  slave1db  ││  slave2db  ││  slave3db  ││   redis    ││ external-api │
- │  (default)  ││  (slave1)  ││  (slave2)  ││  (slave3)  ││  (Redis)   ││   (HTTP)     │
- └──────┬──────┘└────────────┘└────────────┘└────────────┘└────────────┘└──────────────┘
- ┌──────▼──────┐
- │  postgres   │
- └─────────────┘
-```
+## 1. Quick Start
 
-## Components
-
-| Service | Technology | Port | Purpose |
-|---------|------------|------|---------|
-| **Web** | Django 4.2 + Gunicorn | 8000 | Application server |
-| **Nginx** | Nginx | 8001 | Reverse proxy, static files |
-| **PostgreSQL** | PostgreSQL 16 | 5433 | Primary database (via PgBouncer) |
-| **PgBouncer** | PgBouncer | 6432 | Connection pooler for `default` DB |
-| **Slave1 DB** | PostgreSQL 16 | 5434 | `slave1` database instance |
-| **Slave2 DB** | PostgreSQL 16 | 5435 | `slave2` database instance |
-| **Slave3 DB** | PostgreSQL 16 | 5436 | `slave3` database instance |
-| **Redis** | Redis 7 | 6379 | Cache & sessions |
-| **External API** | go-httpbin | 8080 | Downstream HTTP dependency |
-
-## Frozen Environment Endpoints
-
-All endpoints are prefixed with `/api/`.
-
-| Method | Endpoint | Target Topology Component | Description |
-|--------|----------|---------------------------|-------------|
-| `POST` | `/api/products/` | `default` (PostgreSQL) | Creates product in primary DB |
-| `GET` | `/api/products/read-slave1/` | `slave1` (slave1db) | Reads products from slave1 DB |
-| `GET` | `/api/products/read-slave2/` | `slave2` (slave2db) | Reads products from slave2 DB |
-| `GET` | `/api/products/read-slave3/` | `slave3` (slave3db) | Reads products from slave3 DB |
-| `GET` | `/api/products/cache/` | `Redis` (redis) | Read/write caching using Redis |
-| `GET` | `/api/products/external/` | `HTTP` (external-api) | Makes HTTP request to downstream service |
-| `GET` | `/api/products/error/` | App Error | Raises 500 error for trace validation |
-| `GET` | `/api/products/slow/` | Latency Delay | Introduces 2s delay for trace latency |
-
-### UI Pages
-| Endpoint | Description |
-|----------|-------------|
-| `/` | Interactive API endpoint explorer |
-| `/products-tmpl/` | HTML product list |
-| `/products-tmpl/{id}/` | HTML product detail |
-
-## Key Features for OTel Testing
-
-### 1. **Request Logging Middleware** (`api/middleware.py`)
-- Generates/propagates `X-Request-ID` headers
-- Logs request method, path, status, duration as JSON
-- Adds `X-Response-Time` header to responses
-- Handles exceptions with structured error logging
-
-### 2. **Database Operations**
-- Standard ORM queries (auto-instrumented by OTel)
-- Raw SQL execution via `connection.cursor()`
-- Transaction management with `select_for_update()`
-- Bulk operations with `transaction.atomic()`
-
-### 3. **Caching** (`django-redis`)
-- Redis-backed cache with `cache.get/set`
-- Cache hit/miss demonstration endpoint
-- Health check includes Redis connectivity
-
-### 4. **External HTTP Calls**
-- `requests.get()` with configurable timeout
-- Returns response time for latency analysis
-
-### 5. **Concurrency Patterns**
-- Thread pool execution (`threading.Thread`)
-- Thread joins for synchronization
-
-### 6. **Manual OTel Spans**
-- Programmatic span creation with attributes
-- Nested span hierarchy demonstration
-
-## Configuration
-
-### Environment Variables
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DJANGO_DB_HOST` | `localhost` | PostgreSQL host |
-| `DJANGO_DB_PORT` | `5433` | PostgreSQL port |
-| `DJANGO_DB_NAME` | `django_otel` | Database name |
-| `DJANGO_DB_USER` | `django` | Database user |
-| `DJANGO_DB_PASSWORD` | `django` | Database password |
-| `DJANGO_REDIS_URL` | `redis://127.0.0.1:6379/1` | Redis connection URL |
-| `GUNICORN_WORKERS` | `CPU*2+1` | Gunicorn worker count |
-| `GUNICORN_THREADS` | `4` | Threads per worker |
-
-### PgBouncer Settings (`pgbouncer/pgbouncer.ini`)
-- **Pool mode**: `session` (per-client connection)
-- **Default pool size**: 500 connections
-- **Max client connections**: 1000
-- **Server lifetime**: 3600s (rotation)
-
-### Gunicorn Settings (`gunicorn.conf.py`)
-- **Worker class**: `gthread` (threaded workers)
-- **Workers**: Auto-calculated or `GUNICORN_WORKERS`
-- **Threads**: `GUNICORN_THREADS` (default 4)
-- **Timeout**: 120s
-
-## Adding OpenTelemetry
-
-The project is structured for easy OTel integration. To add instrumentation:
-
+### Start Fresh Stack
 ```bash
-# Install OTel packages
-pip install opentelemetry-distro opentelemetry-exporter-otlp
-
-# Run auto-instrumentation
-opentelemetry-bootstrap -a install
+docker-compose down -v
+docker-compose up -d --build
 ```
 
-Then run with:
+### Generate APM Traffic
 ```bash
-opentelemetry-instrument \
-  --traces_exporter otlp \
-  --metrics_exporter otlp \
-  --logs_exporter otlp \
-  --service_name django-otel-poc \
-  python manage.py runserver
+python3 scripts/generate_traffic.py --duration 30
 ```
 
-### Recommended Instrumentation Packages
-```bash
-pip install \
-  opentelemetry-instrumentation-django \
-  opentelemetry-instrumentation-psycopg2 \
-  opentelemetry-instrumentation-redis \
-  opentelemetry-instrumentation-requests \
-  opentelemetry-instrumentation-threads
-```
+---
 
-## Project Structure
+## 2. Access Links
 
-```
-django-otel-poc/
-├── api/                    # Main Django app
-│   ├── migrations/         # Database migrations
-│   ├── templates/          # HTML templates
-│   ├── __init__.py
-│   ├── admin.py            # Admin configuration
-│   ├── apps.py             # App config
-│   ├── middleware.py       # Request logging middleware
-│   ├── models.py           # Product model
-│   ├── serializers.py      # DRF serializers
-│   ├── tests.py            # Test cases
-│   ├── urls.py             # API routes
-│   └── views.py            # All view logic
-├── config/                 # Django project config
-│   ├── __init__.py
-│   ├── asgi.py
-│   ├── settings.py         # Main settings
-│   ├── urls.py             # Root URL config
-│   └── wsgi.py
-├── nginx/                  # Nginx configuration
-│   ├── Dockerfile
-│   └── nginx.conf
-├── pgbouncer/              # PgBouncer configuration
-│   ├── pgbouncer.ini
-│   ├── pg_hba.conf
-│   └── userlist.txt
-├── .gitignore
-├── .venv/                  # Virtual environment (local)
-├── docker-compose.yml      # Multi-service orchestration
-├── Dockerfile              # Web service image
-├── gunicorn.conf.py        # Gunicorn configuration
-├── manage.py               # Django CLI
-├── mise.toml               # Tool version pinning
-└── requirements.txt        # Python dependencies
-```
+- **Grafana APM Overview (Default Home)**: `http://localhost:3000/d/datadog-apm-replacement/apm-datadog-replacement`
+- **Grafana Service Detail**: `http://localhost:3000/d/datadog-service-detail/apm-service-detail`
+- **Grafana Request Instances**: `http://localhost:3000/d/request-instances/apm-request-instances`
+- **Grafana Tempo Trace Explore**: `http://localhost:3000/explore`
+- **Prometheus Metrics Engine**: `http://localhost:9090`
+- **OTel Collector Health Check**: `http://localhost:13133`
+- **Django Application (via Nginx)**: `http://localhost:8001/api/products/`
 
-## Testing
+---
 
-```bash
-# Run Django tests
-python manage.py test
+## 3. How to Use the APM Features
 
-# Run with coverage
-pip install coverage
-coverage run --source='.' manage.py test
-coverage report
-```
+### A. View Services & Endpoints Overview
+Start at the **[Grafana APM Overview](http://localhost:3000/d/datadog-apm-replacement/apm-datadog-replacement)** (Grafana home):
+- **Services**: Req/sec, P95, and Error Rate for `django`, `postgres`, `slave1db`, `slave2db`, `slave3db`, and `redis`. Click a service Name for Service Detail.
+- **HTTP endpoints**, database queries, and cache operations summary on the same page.
 
-## Health Checks
+### B. View Trace Instances & Interactive Waterfalls
+1. Click an **endpoint URL** or the **View Instances** button (e.g. `GET /api/products/cache/`).
+2. Grafana opens the **Request Instances** dashboard, filtered to that service + endpoint, with a table of matching traces (Trace ID, start time, duration, status).
+3. Click a **Trace ID** to open the Tempo waterfall:
+   - **Parent-Child Tree**: Shows WSGI → Middlewares → Django View → Master/Slave DB queries → Redis calls → Outbound HTTP API requests.
+   - **Gantt Timeline**: Visualizes execution timing and latency per layer.
+   - **Details Drawer**: Displays span attributes (`server.address`, `db.query.text`, `http.status_code`, etc.).
 
-The `/api/products/health/` endpoint verifies:
-- **PostgreSQL**: Executes `Product.objects.first()`
-- **Redis**: Sets/gets a test key
+---
 
-Returns:
-```json
-{
-  "status": "healthy|degraded",
-  "checks": {
-    "postgres": "ok|error: ...",
-    "redis": "ok|error: ..."
-  }
-}
-```
+## 4. Architectural Highlights
 
-## Admin Interface
+1. **Per-Middleware Spans**: Custom functional interception of `BaseHandler.load_middleware` creates nested spans for every middleware (`SecurityMiddleware`, `CsrfViewMiddleware`, etc.) while preserving Django hook methods (`process_view`, `process_exception`, `process_template_response`).
+2. **Master & Slave DB Alias Tagging**: Uses `contextvars.ContextVar` inside `BaseDatabaseWrapper.cursor` to map Django database connection aliases (`default` → `postgres`, `slave1` → `slave1db`, `slave2` → `slave2db`, `slave3` → `slave3db`).
+3. **Parameterized SQL Redaction**: Parameterized query text (`db.query.text`) and low-cardinality query summaries (`db.query.summary`) are stored safely without PII leak risks.
+4. **Gunicorn Thread Safety**: Initialized in `gunicorn.conf.py` `post_fork` hook with automatic batch flushing on `worker_exit`.
 
-Create a superuser:
-```bash
-python manage.py createsuperuser
-```
+---
 
-Access at `/admin/` with credentials.
-
-## Production Considerations
-
-1. **Secret Key**: Generate a secure `SECRET_KEY`
-2. **Debug**: Set `DEBUG = False`
-3. **Allowed Hosts**: Configure specific hosts
-4. **Database**: Use connection pooling (PgBouncer configured)
-5. **Caching**: Redis configured with django-redis
-6. **Static Files**: Collected via `collectstatic` in Dockerfile
-7. **Logging**: JSON structured logging via middleware
-8. **Workers**: Tune `GUNICORN_WORKERS` and `GUNICORN_THREADS` for your workload
-
-## License
-
-POC project - no license specified.
+## 5. Documentation Guides
+- [`OTEL_DJANGO_INSTRUMENTATION.md`](OTEL_DJANGO_INSTRUMENTATION.md): Request-path span tree, custom Django hooks, and how to add instrumentation.
+- [`DATADOG_REPLACEMENT_GUIDE.md`](DATADOG_REPLACEMENT_GUIDE.md): 5-minute blueprint for integrating this observability stack into any Django project.
+- [`design.md`](file:///Users/bala/workspace/datadog-replacement-poc/design.md): Detailed technical design and telemetry data model.
+- [`tasks.md`](file:///Users/bala/workspace/datadog-replacement-poc/tasks.md): Implementation phase execution checklist.

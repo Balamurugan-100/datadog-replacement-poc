@@ -1,0 +1,341 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "2. APM Overview",
+      "type": "link",
+      "url": "/d/datadog-apm-replacement/apm-datadog-replacement"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "3. Service Detail",
+      "type": "link",
+      "url": "/d/datadog-service-detail/apm-service-detail"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "4. Request Instances",
+      "type": "link",
+      "url": "/d/request-instances/apm-request-instances"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "title": "Services",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2,
+      "title": "Services",
+      "type": "table",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(label_replace(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", service_name!=\"pgbouncer\", service_name!=\"\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\"}[$__range]), \"service\", \"$1\", \"service_name\", \"(.+)\") or label_replace(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_CLIENT\", server_address!=\"pgbouncer\", server_address!=\"\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\"}[$__range]), \"service\", \"$1\", \"server_address\", \"(.+)\")) by (service)",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{service}}",
+          "range": false,
+          "refId": "Requests_Per_Sec"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(label_replace(histogram_quantile(0.95, sum(rate(otel_traces_span_metrics_duration_milliseconds_bucket{span_kind=\"SPAN_KIND_SERVER\", service_name!=\"pgbouncer\", service_name!=\"\",deployment_environment=~\"$environment\",application=~\"$application\"}[$__range])) by (le, service_name)), \"service\", \"$1\", \"service_name\", \"(.+)\") or label_replace(histogram_quantile(0.95, sum(rate(otel_traces_span_metrics_duration_milliseconds_bucket{span_kind=\"SPAN_KIND_CLIENT\", server_address!=\"pgbouncer\", server_address!=\"\",deployment_environment=~\"$environment\",application=~\"$application\"}[$__range])) by (le, server_address)), \"service\", \"$1\", \"server_address\", \"(.+)\")) by (service)",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{service}}",
+          "range": false,
+          "refId": "P95_Latency"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "(sum(label_replace(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", status_code=\"STATUS_CODE_ERROR\", service_name!=\"pgbouncer\", service_name!=\"\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\"}[$__range]), \"service\", \"$1\", \"service_name\", \"(.+)\") or label_replace(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", status_code=\"STATUS_CODE_ERROR\", span_kind=\"SPAN_KIND_CLIENT\", server_address!=\"pgbouncer\", server_address!=\"\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\"}[$__range]), \"service\", \"$1\", \"server_address\", \"(.+)\")) by (service)) / (sum(label_replace(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\", service_name!=\"pgbouncer\", service_name!=\"\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\"}[$__range]), \"service\", \"$1\", \"service_name\", \"(.+)\") or label_replace(rate(otel_traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_CLIENT\", server_address!=\"pgbouncer\", server_address!=\"\",deployment_environment=~\"$environment\",application=~\"$application\",status_code=~\"$status\"}[$__range]), \"service\", \"$1\", \"server_address\", \"(.+)\")) by (service)) * 100",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{service}}",
+          "range": false,
+          "refId": "Error_Rate"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "service",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Time 1": true,
+              "Time 2": true
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "service"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Service Name"
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": false,
+                    "title": "${__value.text}",
+                    "url": "/d/datadog-service-detail/apm-service-detail?orgId=1&from=${__from}&to=${__to}&var-service=${__data.fields.service:percentencode}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #Requests_Per_Sec"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Throughput (Req/sec)"
+              },
+              {
+                "id": "unit",
+                "value": "reqps"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #P95_Latency"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "P95 Latency"
+              },
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #Error_Rate"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Error Rate"
+              },
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "footer": {
+          "countRows": true,
+          "enablePagination": true,
+          "show": true
+        },
+        "showHeader": true
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 3,
+      "title": "Endpoints",
+      "type": "row",
+      "panels": []
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [
+    "apm",
+    "datadog",
+    "services",
+    "opentelemetry"
+  ],
+  "templating": {
+    "list": [
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "hide": 0,
+        "includeAll": true,
+        "name": "environment",
+        "query": "label_values(otel_traces_span_metrics_calls_total, deployment_environment)",
+        "type": "query",
+        "refresh": 1,
+        "sort": 1
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "hide": 0,
+        "includeAll": true,
+        "name": "application",
+        "query": "label_values(otel_traces_span_metrics_calls_total, application)",
+        "type": "query",
+        "refresh": 1,
+        "sort": 1
+      },
+      {
+        "hide": 0,
+        "includeAll": true,
+        "name": "status",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "OK",
+            "value": "STATUS_CODE_OK"
+          },
+          {
+            "selected": false,
+            "text": "ERROR",
+            "value": "STATUS_CODE_ERROR"
+          },
+          {
+            "selected": false,
+            "text": "UNSET",
+            "value": "STATUS_CODE_UNSET"
+          }
+        ],
+        "query": "STATUS_CODE_OK,STATUS_CODE_ERROR,STATUS_CODE_UNSET",
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "APM - Datadog Replacement",
+  "uid": "datadog-apm-replacement"
+}
