@@ -5,3 +5,7 @@
 .DS_Store
 .env
 staticfiles/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
