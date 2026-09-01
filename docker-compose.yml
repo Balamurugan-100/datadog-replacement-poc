@@ -121,6 +121,10 @@ services:
       - DJANGO_REDIS_URL=redis://redis:6379/1
       - GUNICORN_WORKERS=4
       - GUNICORN_THREADS=4
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tp-otel-collector:4318
+    networks:
+      - default
+      - tp-observability-net
     depends_on:
       pgbouncer:
         condition: service_started
@@ -142,6 +146,10 @@ services:
       - static_files:/app/staticfiles:ro
     depends_on:
       - web
+
+networks:
+  tp-observability-net:
+    external: true
 
 volumes:
   postgres_data:

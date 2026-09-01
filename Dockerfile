@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
+COPY sdk/ ./sdk/
 
 RUN python -m pip install --upgrade "pip<24.1" \
   && python -m pip install -r requirements.txt
